@@ -5,6 +5,7 @@ import pyttsx3
 from datetime import date, datetime
 
 speechList = []
+speech = ""
 
 def say(text):
     engine = pyttsx3.init()
@@ -21,6 +22,7 @@ def writeToLog(speechList):
             file.write(line + "\n")
 
 def listen():
+    global speech
     r = sr.Recognizer()
     mic = sr.Microphone()
     with mic as source:
