@@ -1,0 +1,21 @@
+# requirements.txt for IAN the Python Assistant
+audioop-lts==0.2.2
+certifi==2025.8.3
+charset-normalizer==3.4.3
+comtypes==1.4.11
+fuzzywuzzy==0.18.0
+idna==3.10
+pillow==11.3.0
+PyAudio==0.2.14
+pynput==1.8.1
+pypiwin32==223
+pystray==0.19.5
+pyttsx3==2.99
+pywin32==311
+requests==2.32.5
+six==1.17.0
+SpeechRecognition==3.14.3
+standard-aifc==3.13.0
+standard-chunk==3.13.0
+typing_extensions==4.15.0
+urllib3==2.5.0
