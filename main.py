@@ -18,8 +18,11 @@ eng = pyttsx3.init()
 voices = {
     "UK": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech\\Voices\\Tokens\\TTS_MS_EN-GB_HAZEL_11.0",
     "US_David": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech\\Voices\\Tokens\\TTS_MS_EN-US_DAVID_11.0",
-    "US_Zira": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech\\Voices\\Tokens\\TTS_MS_EN-US_ZIRA_11.0"
+    "US_Zira": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech\\Voices\\Tokens\\TTS_MS_EN-US_ZIRA_11.0",
+    "AU_Catherine": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech\\Voices\\Tokens\\MSTTS_V110_enAU_CatherineM"
 }
+
+speech = ""
 
 def checkSpeech(speech):
     for intent in intents.weather:
@@ -29,7 +32,7 @@ def checkSpeech(speech):
             weather.openwindow()
             break
 
-def say(text, voice="UK"):
+def say(text, voice="AU_Catherine"):
     global speaking
     if speaking:
         return
@@ -39,14 +42,15 @@ def say(text, voice="UK"):
         speaking = True
         eng.setProperty('voice', voices.get(voice, voices["UK"]))
         eng.say(text)
-        saidSpeech.append(f"IAN: {text}")
+        print(text)
         eng.runAndWait()
         speaking = False
     threading.Thread(target=task, daemon=True).start()
 
 mic_lock = threading.Lock()
 
-def listen():
+def listen(intent):
+    global speech
     if not mic_lock.acquire(blocking=False):
         return
     try:
@@ -56,9 +60,9 @@ def listen():
                 audio = r.listen(source, timeout=3)
             try:
                 speech = r.recognize_google(audio) # type: ignore[missing-attribute]
-                saidSpeech.append(f"IAN: {speech}")
                 print(speech)
-                checkSpeech(speech)
+                if intent:
+                    checkSpeech(speech)
             except sr.UnknownValueError:
                 say("I didn't catch that.")
             except sr.RequestError:
@@ -75,7 +79,7 @@ def listen():
 def checkKey(key):
     if key == keyboard.Key.f23:
         root.deiconify()
-        threading.Thread(target=listen, daemon=True).start()
+        threading.Thread(target=lambda: listen(True), daemon=True).start()
 
 def quit_app(icon, item):
     icon.stop()
@@ -314,10 +318,13 @@ class weather():
 
     @staticmethod
     def openwindow():
+
+        say(random.choice(responses.location))
+
         speech = random.choice(responses.weather)
         say(speech)
         weather_screen = tk.Toplevel(root)
-        weather_screen.title("IAN - Weather")
+        weather_screen.title("SARAH - Weather")
         weather_screen.geometry("500x300")
         weather_screen.resizable(False, False)
         weather_screen.wm_attributes("-topmost", True)
@@ -332,15 +339,10 @@ class weather():
 r = sr.Recognizer()
 mic = sr.Microphone()
 
-saidSpeech = []
-
-r.pause_threshold = 0.8
-r.non_speaking_duration = 0.5
-
 speaking = False
 
 root = tk.Tk()
-root.title("IAN - Voice Assistant")
+root.title("SARAH - Voice Assistant")
 root.geometry("300x300")
 root.configure(background="black")
 root.resizable(False, False)
@@ -360,7 +362,7 @@ menu = pystray.Menu(
 
 # Load icon image
 icon_image = Image.open("Assets/logo.ico")
-tray_icon = pystray.Icon("IAN", icon=icon_image, menu=menu)
+tray_icon = pystray.Icon("SARAH", icon=icon_image, menu=menu)
 
 # Runs tray icon in a separate thread
 threading.Thread(target=tray_icon.run, daemon=True).start()
