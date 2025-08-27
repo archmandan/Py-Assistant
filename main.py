@@ -11,6 +11,9 @@ from speech_recognition import WaitTimeoutError
 import requests
 import pyttsx3
 from datetime import datetime, date
+import random
+
+eng = pyttsx3.init()
 
 voices = {
     "UK": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech\\Voices\\Tokens\\TTS_MS_EN-GB_HAZEL_11.0",
@@ -32,7 +35,6 @@ def say(text, voice="UK"):
         return
 
     def task():
-        eng = pyttsx3.init()
         global speaking # type: ignore[unknown-name]
         speaking = True
         eng.setProperty('voice', voices.get(voice, voices["UK"]))
@@ -40,7 +42,6 @@ def say(text, voice="UK"):
         saidSpeech.append(f"IAN: {text}")
         eng.runAndWait()
         speaking = False
-        eng.stop()
     threading.Thread(target=task, daemon=True).start()
 
 mic_lock = threading.Lock()
@@ -91,6 +92,40 @@ class intents:
         "is it sunny today",
         "what's the weather right now",
         "whats the forecast looking like today"
+    ]
+
+class responses:
+    weather = [
+        "Here’s today’s weather forecast for you.",
+        "Got it — the forecast says:",
+        "Here’s what the sky is up to right now.",
+        "The weather gods have spoken, and they say:",
+        "Here’s the official forecast report.",
+        "Weather update coming right up:",
+        "Here’s what you’ll be walking into outside.",
+        "Forecast loaded — here’s the situation.",
+        "Here’s today’s outlook.",
+        "The meteorologists claim this is accurate:",
+        "Here’s the latest scoop from the clouds:",
+        "Looks like the skies have something to say — here’s the forecast:",
+        "Fresh from the weather station:",
+        "This just in — weather report:",
+        "Here’s how the atmosphere is vibing today:",
+        "Grab your coat or shades, depending on this forecast:",
+        "Here’s what Mother Nature has planned:",
+        "Weather check complete, here’s the result:",
+        "Today’s forecast is as follows:",
+        "Skies report the following conditions:",
+        "Here’s what’s happening above us:",
+        "Brace yourself — here’s the forecast:",
+        "Alright, here’s the weather rundown:",
+        "The outlook for today looks like this:",
+        "Today’s skies are serving:",
+        "Forecast incoming, buckle up:",
+        "Here’s your personal weather update:",
+        "Time for a quick peek at the forecast:",
+        "Alright, here’s what the radar says:",
+        "The weather app didn’t lie, here’s what it shows:"
     ]
 
 # == Classes for different operations ==
@@ -203,19 +238,22 @@ class weather():
                     "night": False
                 }
 
-                if entry_dict["weatherCode"] == 113:
-                    if int(entry_dict["time"]) < today_sun["intSunrise"] and int(entry_dict["time"]) > today_sun["intSunset"]:
+                if entry_dict["weatherCode"] == 113:  # clear/sunny
+                    if int(entry_dict["time"]) < today_sun["intSunrise"] or int(entry_dict["time"]) > today_sun["intSunset"]:
                         entry_dict.update({"description": "Clear"})
                         entry_dict.update({"night": True})
-                    elif int(entry_dict["time"]) > today_sun["intSunrise"] and int(entry_dict["time"]) < today_sun["intSunset"]:
+                    else:
                         entry_dict.update({"description": "Sunny"})
                         entry_dict.update({"night": False})
-                else: 
-                    if int(entry_dict["time"]) < today_sun["intSunrise"] and int(entry_dict["time"]) > today_sun["intSunset"]:
+                else:
+                    if int(entry_dict["time"]) < today_sun["intSunrise"] or int(entry_dict["time"]) > today_sun["intSunset"]:
                         entry_dict.update({"night": True})
-                    elif int(entry_dict["time"]) > today_sun["intSunrise"] and int(entry_dict["time"]) < today_sun["intSunset"]:
+                    else:
                         entry_dict.update({"night": False})
-                    entry_dict.update({"description": weather.weather_codes.get(int(entry_dict["weatherCode"]), "Unknown")}) 
+                    entry_dict.update({
+                        "description": weather.weather_codes.get(int(entry_dict["weatherCode"]), "Unknown")
+                    })
+
 
                 entries.append(entry_dict)
 
@@ -223,7 +261,8 @@ class weather():
 
     @staticmethod
     def openwindow():
-        say("Here is the weather forecast")
+        speech = random.choice(responses.weather)
+        say(speech)
         weather_screen = tk.Toplevel(root)
         weather_screen.title("IAN - Weather")
         weather_screen.geometry("500x300")
@@ -231,6 +270,11 @@ class weather():
         weather_screen.wm_attributes("-topmost", True)
         weather_screen.configure(background="black")
         weather_entries = weather.getWeather()
+
+        for entry in weather_entries:
+            print(entry)
+
+        weather_1 = tk.PhotoImage(file=f"Assets/icons/")
 
 r = sr.Recognizer()
 mic = sr.Microphone()
@@ -256,13 +300,14 @@ listener = keyboard.Listener(on_release=checkKey)
 listener.start()
 
 # Create the tray menu
-menu = (
+menu = pystray.Menu(
+    item("Listen", lambda icon, item: checkKey(keyboard.Key.f23)),
     item("Exit", quit_app)
 )
 
 # Load icon image
 icon_image = Image.open("Assets/logo.ico")
-tray_icon = pystray.Icon("IAN", icon=icon_image, menu=pystray.Menu(menu))
+tray_icon = pystray.Icon("IAN", icon=icon_image, menu=menu)
 
 # Runs tray icon in a separate thread
 threading.Thread(target=tray_icon.run, daemon=True).start()
@@ -271,3 +316,4 @@ root.wm_iconbitmap("Assets/logo.ico")
 
 root.withdraw()
 root.mainloop()
+eng.stop()
