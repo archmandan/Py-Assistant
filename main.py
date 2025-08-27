@@ -182,8 +182,58 @@ class weather():
         114: "Clear"
     }
     weather_icons = {
-        395: ""
+        395: "thunderstorms-snow.png",
+        392: "thunderstorms-snow.png",
+        389: "thunderstorms-heavy-rain.png",
+        386: "thunderstorms-light-rain.png",
+        377: "hail.png",        
+        374: "hail.png",
+        371: "snowy-3.png",
+        368: "snowy-2.png",
+        365: "sleet.png",
+        362: "sleet.png",
+        359: "torrential-rain.png",
+        356: "rainy-3.png",
+        353: "rainy-2.png",
+        350: "ice-pellets.png",
+        338: "snowy-3.png",
+        335: "snowy-3.png",
+        332: "snowy-3.png",
+        329: "snowy-3.png",
+        326: "snowy-2.png",
+        323: "snowy-2.png",
+        320: "sleet.png",
+        317: "sleet.png",
+        314: "freezing-rain.png",
+        311: "freezing-rain.png",
+        308: "rainy-4.png",
+        305: "rainy-4.png",
+        302: "rainy-3.png",
+        299: "rainy-3.png",
+        296: "rainy-2.png",
+        293: "rainy-2.png",
+        284: "freezing-rain.png",
+        281: "freezing-rain.png",
+        266: "rainy-1.png",
+        263: "rainy-1.png",
+        260: "fog.png",
+        248: "fog.png",
+        230: "blizzard.png",
+        227: "snowy-2.png",
+        200: "scattered-thunderstorms.png",
+        185: "freezing-rain.png",
+        182: "sleet.png",
+        179: "snowy-1.png",
+        176: "rainy-1.png",
+        143: "haze.png",
+        122: "overcast.png",
+        119: "cloudy.png",
+        116: "cloudy.png",
+        113: "clear-day.png",
+        114: "clear-night.png"
     }
+
+    icon_path = "Assets\\icons\\SVGs\\"
 
     @staticmethod
     def time_to_int(time=""):
