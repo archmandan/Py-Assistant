@@ -12,6 +12,8 @@ import requests
 import pyttsx3
 from datetime import datetime, date
 import random
+import wikipedia
+from wikipedia.exceptions import DisambiguationError
 
 eng = pyttsx3.init()
 
@@ -24,15 +26,114 @@ voices = {
 
 speech = ""
 
-def checkSpeech(speech):
-    for intent in intents.weather:
-        ratio = fuzz.ratio(speech, intent)
-        print(ratio)
-        if ratio >= 60:
-            weather.openwindow()
-            break
+class funcs:
+    @staticmethod
+    def getTime():
+        now = str(datetime.now().strftime("%I:%M %p"))
+        response = random.choice(responses["time"]).format(time=now)
+        say(response, printing=True)
 
-def say(text, voice="AU_Catherine"):
+    @staticmethod
+    def greeting():
+        response = random.choice(responses["greeting"])
+        say(response, printing=True)
+
+    @staticmethod
+    def search(query):
+        try:
+            result = wikipedia.search(query, sentences=3)
+            say(result, printing=True)
+        except DisambiguationError as e:
+            say("You'll need to be more specific\nDid you mean?", printing=True)
+            say(f"{random.choice(e.options)}")
+intents = {
+    "time": [
+        "What time is it?",
+        "Can you tell me the time?",
+        "What's the current time?",
+        "Do you know the time?",
+        "Give me the time."
+    ],
+    "greeting": [
+        "Hi",
+        "Hello",
+        "Hey",
+        "Good morning",
+        "Good evening"
+    ],
+}
+
+intent_funcs = {
+#    "weather": None,
+    "time": funcs.getTime,
+    "greeting": funcs.greeting,
+}
+
+responses = {
+    "time": [
+        "The current time is {time}.",
+        "Right now it's {time}.",
+        "It's {time} at the moment.",
+        "The clock says {time}.",
+        "According to my calculations, it's {time}.",
+        "As of now, the time is {time}.",
+        "You're looking at {time}.",
+        "My circuits tell me it's {time}.",
+        "Guess what? It's {time}.",
+        "Not to alarm you, but it's {time}.",
+        "If you must know, it's {time}.",
+        "Time check: {time}.",
+        "Your watch should say {time}.",
+        "Last I checked, it's {time}.",
+        "The official time is {time}.",
+        "Currently, it's {time}.",
+        "My internal clock says {time}.",
+        "Let me save you the suspense: {time}.",
+        "I can confirm it's {time}.",
+        "It's exactly {time}.",
+        "Drumroll please… it's {time}.",
+        "Tick-tock, it's {time}.",
+        "Surprise! It's {time}.",
+        "Breaking news: it's {time}.",
+        "Fun fact: the time is {time}."
+    ],
+    "greeting": [
+        "Hello!",
+        "Hi there!",
+        "Hey!",
+        "Good morning!",
+        "Good afternoon!",
+        "Good evening!",
+        "Hi, how's it going?",
+        "Hey! Nice to see you.",
+        "Hello! What's up?",
+        "Greetings!",
+        "Hey there, friend!",
+        "Hi! How are you today?",
+        "Hello! How’s your day going?",
+        "Hey! Long time no see.",
+        "Hi! Ready to chat?",
+        "Good day!",
+        "Hey! Hope you're doing well.",
+        "Hello there!",
+        "Hi! What's happening?",
+        "Hey! How’s everything?"
+    ]
+}
+
+
+def checkForIntents(text):
+    for key, value_list in intents.items():
+        key = key.lower()
+        for item in value_list:
+            item = item.upper()
+            text = text.upper()
+            ratio = fuzz.partial_ratio(text, item)
+            if ratio > 60:
+                intent_funcs[key]() # type: ignore
+
+
+def say(text, voice="AU_Catherine", printing=False):
     global speaking
     if speaking:
         return
@@ -42,19 +143,21 @@ def say(text, voice="AU_Catherine"):
         speaking = True
         eng.setProperty('voice', voices.get(voice, voices["UK"]))
         eng.say(text)
-        print(text)
+        if printing:
+            print(text)
         eng.runAndWait()
         speaking = False
     threading.Thread(target=task, daemon=True).start()
 
 mic_lock = threading.Lock()
 
-def listen(intent):
+def listen(intent=False):
     global speech
     if not mic_lock.acquire(blocking=False):
         return
     try:
         try:
+            root.deiconify()
             with mic as source:
                 r.adjust_for_ambient_noise(source, duration=0.3)
                 audio = r.listen(source, timeout=3)
@@ -62,7 +165,7 @@ def listen(intent):
                 speech = r.recognize_google(audio) # type: ignore[missing-attribute]
                 print(speech)
                 if intent:
-                    checkSpeech(speech)
+                    checkForIntents(speech)
             except sr.UnknownValueError:
                 say("I didn't catch that.")
             except sr.RequestError:
@@ -78,263 +181,11 @@ def listen(intent):
 
 def checkKey(key):
     if key == keyboard.Key.f23:
-        root.deiconify()
-        threading.Thread(target=lambda: listen(True), daemon=True).start()
+        threading.Thread(target=lambda: listen(intent=True), daemon=True).start()
 
 def quit_app(icon, item):
     icon.stop()
     root.after(0, root.destroy) # type: ignore[bad-argument-type]
-
-class intents:
-    weather = [
-        "what's the weather like today",
-        "tell me today's forecast",
-        "is it going to rain today",
-        "do I need an umbrella today",
-        "what's the temperature today",
-        "how's the weather looking today",
-        "is it sunny today",
-        "what's the weather right now",
-        "whats the forecast looking like today"
-    ]
-
-class responses:
-    weather = [
-        "Here’s today’s weather forecast for you.",
-        "Got it — the forecast says:",
-        "Here’s what the sky is up to right now.",
-        "The weather gods have spoken, and they say:",
-        "Here’s the official forecast report.",
-        "Weather update coming right up:",
-        "Here’s what you’ll be walking into outside.",
-        "Forecast loaded — here’s the situation.",
-        "Here’s today’s outlook.",
-        "The meteorologists claim this is accurate:",
-        "Here’s the latest scoop from the clouds:",
-        "Looks like the skies have something to say — here’s the forecast:",
-        "Fresh from the weather station:",
-        "This just in — weather report:",
-        "Here’s how the atmosphere is vibing today:",
-        "Grab your coat or shades, depending on this forecast:",
-        "Here’s what Mother Nature has planned:",
-        "Weather check complete, here’s the result:",
-        "Today’s forecast is as follows:",
-        "Skies report the following conditions:",
-        "Here’s what’s happening above us:",
-        "Brace yourself — here’s the forecast:",
-        "Alright, here’s the weather rundown:",
-        "The outlook for today looks like this:",
-        "Today’s skies are serving:",
-        "Forecast incoming, buckle up:",
-        "Here’s your personal weather update:",
-        "Time for a quick peek at the forecast:",
-        "Alright, here’s what the radar says:",
-        "The weather app didn’t lie, here’s what it shows:"
-    ]
-
-# == Classes for different operations ==
-class weather():
-    weather_codes = {
-        395: "Moderate or heavy snow in area with thunder",
-        392: "Patchy light snow in area with thunder",
-        389: "Moderate or heavy rain in area with thunder",
-        386: "Patchy light rain in area with thunder",
-        377: "Moderate or heavy showers of ice pellets",
-        374: "Light showers of ice pellets",
-        371: "Moderate or heavy snow showers",
-        368: "Light snow showers",
-        365: "Moderate or heavy sleet showers",
-        362: "Light sleet showers",
-        359: "Torrential rain shower",
-        356: "Moderate or heavy rain shower",
-        353: "Light rain shower",
-        350: "Ice pellets",
-        338: "Heavy snow",
-        335: "Patchy heavy snow",
-        332: "Moderate snow",
-        329: "Patchy moderate snow",
-        326: "Light snow",
-        323: "Patchy light snow",
-        320: "Moderate or heavy sleet",
-        317: "Light sleet",
-        314: "Moderate or Heavy freezing rain",
-        311: "Light freezing rain",
-        308: "Heavy rain",
-        305: "Heavy rain at times",
-        302: "Moderate rain",
-        299: "Moderate rain at times",
-        296: "Light rain",
-        293: "Patchy light rain",
-        284: "Heavy freezing drizzle",
-        281: "Freezing drizzle",
-        266: "Light drizzle",
-        263: "Patchy light drizzle",
-        260: "Freezing fog",
-        248: "Fog",
-        230: "Blizzard",
-        227: "Blowing snow",
-        200: "Thundery outbreaks in nearby",
-        185: "Patchy freezing drizzle nearby",
-        182: "Patchy sleet nearby",
-        179: "Patchy snow nearby",
-        176: "Patchy rain nearby",
-        143: "Mist",
-        122: "Overcast",
-        119: "Cloudy",
-        116: "Partly Cloudy",
-        113: "Sunny",
-        114: "Clear"
-    }
-    weather_icons = {
-        395: "thunderstorms-snow.png",
-        392: "thunderstorms-snow.png",
-        389: "thunderstorms-heavy-rain.png",
-        386: "thunderstorms-light-rain.png",
-        377: "hail.png",        
-        374: "hail.png",
-        371: "snowy-3.png",
-        368: "snowy-2.png",
-        365: "sleet.png",
-        362: "sleet.png",
-        359: "torrential-rain.png",
-        356: "rainy-3.png",
-        353: "rainy-2.png",
-        350: "ice-pellets.png",
-        338: "snowy-3.png",
-        335: "snowy-3.png",
-        332: "snowy-3.png",
-        329: "snowy-3.png",
-        326: "snowy-2.png",
-        323: "snowy-2.png",
-        320: "sleet.png",
-        317: "sleet.png",
-        314: "freezing-rain.png",
-        311: "freezing-rain.png",
-        308: "rainy-4.png",
-        305: "rainy-4.png",
-        302: "rainy-3.png",
-        299: "rainy-3.png",
-        296: "rainy-2.png",
-        293: "rainy-2.png",
-        284: "freezing-rain.png",
-        281: "freezing-rain.png",
-        266: "rainy-1.png",
-        263: "rainy-1.png",
-        260: "fog.png",
-        248: "fog.png",
-        230: "blizzard.png",
-        227: "snowy-2.png",
-        200: "scattered-thunderstorms.png",
-        185: "freezing-rain.png",
-        182: "sleet.png",
-        179: "snowy-1.png",
-        176: "rainy-1.png",
-        143: "haze.png",
-        122: "overcast.png",
-        119: "cloudy.png",
-        116: "cloudy.png",
-        113: "clear-day.png",
-        114: "clear-night.png"
-    }
-
-    icon_path = "Assets\\icons\\SVGs\\"
-
-    @staticmethod
-    def time_to_int(time=""):
-        time_num, period = time.split(" ")
-        hours, minutes = map(int, time_num.split(":"))
-
-        if period.upper() == "PM" and hours != 12:
-            hours += 12
-        elif period.upper() == "AM" and hours == 12:
-            hours = 0
-        if minutes >= 30:
-            hours += 1
-
-        return hours * 100
-
-    @staticmethod
-    def getWeather(location="Leeds"):
-        url = f"https://wttr.in/{location}?format=j1"
-        data = requests.get(url).json()
-
-        entries = []
-
-        today = str(date.today())
-        time = int(datetime.now().strftime("%H") + "00")
-
-        today_weather = None
-        today_sun: dict[str, str | int] = {
-            "sunrise": "",
-            "sunset": "",
-            "intSunset": 0,
-            "intSunrise": 0
-        }
-
-        for day in data["weather"]:
-            if day["date"] == today:
-                today_weather = day
-                today_sun["sunrise"] = day["astronomy"][0]["sunrise"]
-                today_sun["sunset"] = day["astronomy"][0]["sunset"]
-                break
-
-        today_sun["intSunrise"] = weather.time_to_int(today_sun["sunrise"])
-        today_sun["intSunset"] = weather.time_to_int(today_sun["sunset"])
-
-
-        for entry in today_weather["hourly"]: # type: ignore[unsupported-operation]
-            if entry["time"] <= time:
-                entry_dict = {
-                    "time": entry["time"],
-                    "uvIndex": entry["uvIndex"],
-                    "tempC": entry["tempC"],
-                    "tempF": entry["tempF"],
-                    "FeelsLikeC": entry["FeelsLikeC"],
-                    "FeelsLikeF": entry["FeelsLikeF"],
-                    "weatherCode": int(entry["weatherCode"]),
-                    "description": "",
-                    "night": False
-                }
-
-                if entry_dict["weatherCode"] == 113:  # clear/sunny
-                    if int(entry_dict["time"]) < today_sun["intSunrise"] or int(entry_dict["time"]) > today_sun["intSunset"]:
-                        entry_dict.update({"weatherCode": 114})
-                        entry_dict.update({"night": True})
-                    else:
-                        entry_dict.update({"night": False})
-                else:
-                    if int(entry_dict["time"]) < today_sun["intSunrise"] or int(entry_dict["time"]) > today_sun["intSunset"]:
-                        entry_dict.update({"night": True})
-                    else:
-                        entry_dict.update({"night": False})
-                entry_dict.update({
-                    "description": weather.weather_codes.get(int(entry_dict["weatherCode"]), "Unknown")
-                })
-
-
-                entries.append(entry_dict)
-
-        return entries
-
-    @staticmethod
-    def openwindow():
-
-        say(random.choice(responses.location))
-
-        speech = random.choice(responses.weather)
-        say(speech)
-        weather_screen = tk.Toplevel(root)
-        weather_screen.title("SARAH - Weather")
-        weather_screen.geometry("500x300")
-        weather_screen.resizable(False, False)
-        weather_screen.wm_attributes("-topmost", True)
-        weather_screen.configure(background="black")
-        weather_entries = weather.getWeather()
-
-        for entry in weather_entries:
-            print(entry)
-
-        weather_1 = tk.PhotoImage(file=f"Assets/icons/")
 
 r = sr.Recognizer()
 mic = sr.Microphone()
