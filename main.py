@@ -178,7 +178,11 @@ class weather():
         122: "Overcast",
         119: "Cloudy",
         116: "Partly Cloudy",
-        113: "Clear/Sunny"
+        113: "Sunny",
+        114: "Clear"
+    }
+    weather_icons = {
+        395: ""
     }
 
     @staticmethod
@@ -240,19 +244,18 @@ class weather():
 
                 if entry_dict["weatherCode"] == 113:  # clear/sunny
                     if int(entry_dict["time"]) < today_sun["intSunrise"] or int(entry_dict["time"]) > today_sun["intSunset"]:
-                        entry_dict.update({"description": "Clear"})
+                        entry_dict.update({"weatherCode": 114})
                         entry_dict.update({"night": True})
                     else:
-                        entry_dict.update({"description": "Sunny"})
                         entry_dict.update({"night": False})
                 else:
                     if int(entry_dict["time"]) < today_sun["intSunrise"] or int(entry_dict["time"]) > today_sun["intSunset"]:
                         entry_dict.update({"night": True})
                     else:
                         entry_dict.update({"night": False})
-                    entry_dict.update({
-                        "description": weather.weather_codes.get(int(entry_dict["weatherCode"]), "Unknown")
-                    })
+                entry_dict.update({
+                    "description": weather.weather_codes.get(int(entry_dict["weatherCode"]), "Unknown")
+                })
 
 
                 entries.append(entry_dict)
